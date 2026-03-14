@@ -22,10 +22,10 @@
     "productName": "Log Analizoru",
     "asar": true,
     "directories": {
-      "output": "dist_final"
+      "output": "Masaustu_Kurulum_Dosyalari"
     },
     "win": {
-      "target": "portable"
+      "target": "nsis"
     },
     "files": [
       "main.js",
