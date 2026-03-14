@@ -10,7 +10,6 @@
   - Seri numarası bazlı teknik servis notları tutma.
   - Cihaz bazlı müşteri ismi kaydetme (Düzenle/Onayla fonksiyonu ile).
 - **Log Geçmişi**: Daha önce analiz edilmiş loglara tek tıkla ulaşım, yeniden yükleme ve PDF dökümü alma.
-- **AI Teşhis**: Claude veya Gemini (Google) yapay zeka modelleri ile kök neden analizi ve çözüm önerileri. (API anahtarı gerektirir).
 - **Raporlama**: Profesyonel PDF ve Excel (XLSX) dökümleri alma.
 - **Akıllı Kilovat (kW) Seçimi**: 7.2 kW ve 11 kW modelleri için otomatik limit ve analiz uyarlaması.
 

@@ -34,7 +34,9 @@ function sanitizeFilename(name) {
 function saveLogFile(serial, filename, kwLimit, rawContent, evLog, dtLog, analysis) {
   const safeName = sanitizeFilename(filename.replace(/\.(txt|log)$/i, ''));
   const jsonFilename = `${serial}_${safeName}.json`;
-  const filePath = path.join(storagePath, jsonFilename);
+  const txtFilename = `${serial}_${safeName}.txt`;
+  const jsonPath = path.join(storagePath, jsonFilename);
+  const txtPath = path.join(storagePath, txtFilename);
 
   const data = {
     serial,
@@ -52,8 +54,27 @@ function saveLogFile(serial, filename, kwLimit, rawContent, evLog, dtLog, analys
     savedAt: new Date().toISOString()
   };
 
-  fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf-8');
+  fs.writeFileSync(jsonPath, JSON.stringify(data, null, 2), 'utf-8');
+  if (rawContent && rawContent.length > 0) {
+    fs.writeFileSync(txtPath, rawContent, 'utf-8');
+  }
   return { success: true, filePath: jsonFilename };
+}
+
+// ── PDF Raporu Kaydet ────────────────────────────
+function saveGeneratedPDF(serial, filename, base64Data) {
+  const safeName = sanitizeFilename(filename.replace(/\.pdf$/i, ''));
+  const pdfFilename = `${safeName}.pdf`;
+  const filePath = path.join(storagePath, pdfFilename);
+
+  try {
+    const buffer = Buffer.from(base64Data, 'base64');
+    fs.writeFileSync(filePath, buffer);
+    return { success: true, filePath: pdfFilename };
+  } catch (e) {
+    console.error('PDF save error:', e);
+    return { success: false, error: e.message };
+  }
 }
 
 // ── Kaydedilmiş Logları Listele ──────────────────
@@ -119,9 +140,18 @@ function loadLogFile(fileId) {
 // ── Log Dosyası Sil ──────────────────────────────
 function deleteLogFile(fileId) {
   const filePath = path.join(storagePath, fileId);
+  const safeBase = fileId.replace(/\.json$/i, '');
+  const txtPath = path.join(storagePath, safeBase + '.txt');
+
   if (fs.existsSync(filePath)) {
     fs.unlinkSync(filePath);
   }
+  if (fs.existsSync(txtPath)) {
+    fs.unlinkSync(txtPath);
+  }
+
+  // Related PDF will not be deleted aggressively as customer might want to keep the report,
+  // but txt and json are deleted together if they exist.
   return { success: true };
 }
 
@@ -168,7 +198,7 @@ function renameSerial(oldSerial, newSerial) {
 
   if (oldSerial === newSerial) return { success: true };
 
-  // 1. saved_logs altındaki tüm log dosyalarını bul ve güncelle
+  // 1. saved_logs altındaki tüm log dosyalarını bul ve güncelle (json, txt, pdf)
   const logFiles = fs.readdirSync(storagePath).filter(f => f.startsWith(oldSerial + '_'));
   
   for (const f of logFiles) {
@@ -177,17 +207,20 @@ function renameSerial(oldSerial, newSerial) {
     const newPath = path.join(storagePath, newFileName);
 
     try {
-      // Eğer hedef dosya zaten varsa (başka bir cihazdan gelmiş olabilir), 
-      // veri kaybını önlemek için sonuna timestamp ekle
       let finalNewPath = newPath;
       if (fs.existsSync(newPath)) {
-        finalNewPath = newPath.replace('.json', '_' + Date.now() + '.json');
+        // Eğer hedef dosya zaten varsa (başka bir cihazdan gelmiş olabilir), veri kaybını önlemek için timestamp ekle
+        const ext = path.extname(newPath);
+        finalNewPath = newPath.replace(ext, '_' + Date.now() + ext);
       }
 
-      const raw = fs.readFileSync(oldPath, 'utf-8');
-      const data = JSON.parse(raw);
-      data.serial = newSerial;
-      fs.writeFileSync(oldPath, JSON.stringify(data, null, 2), 'utf-8');
+      // If it's the json file, we also need to update the data.serial inside
+      if (f.endsWith('.json')) {
+        const raw = fs.readFileSync(oldPath, 'utf-8');
+        const data = JSON.parse(raw);
+        data.serial = newSerial;
+        fs.writeFileSync(oldPath, JSON.stringify(data, null, 2), 'utf-8');
+      }
       fs.renameSync(oldPath, finalNewPath);
     } catch (e) {
       console.error(`Log dosya rename hatası (${f}):`, e);
@@ -223,6 +256,7 @@ module.exports = {
   init,
   getStoragePath,
   saveLogFile,
+  saveGeneratedPDF,
   listLogFiles,
   loadLogFile,
   deleteLogFile,

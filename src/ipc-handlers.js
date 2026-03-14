@@ -22,6 +22,17 @@ function registerIpcHandlers(ipcMain, storage) {
     }
   });
 
+  // ── PDF Kaydet ────────────────────────────────
+  ipcMain.handle('db:save-pdf', async (event, { serial, filename, data }) => {
+    if (!storage) return { success: false, error: 'Depolama modülü yok' };
+    try {
+      return storage.saveGeneratedPDF(serial, filename, data);
+    } catch (err) {
+      console.error('Save PDF error:', err);
+      return { success: false, error: err.message };
+    }
+  });
+
   // ── Logları Listele ───────────────────────────
   ipcMain.handle('db:list-logs', async () => {
     if (!storage) return [];

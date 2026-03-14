@@ -10,6 +10,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // ── Veritabanı İşlemleri ─────────────────────────
   saveToDB: (logData) => ipcRenderer.invoke('db:save-log', logData),
 
+  savePDFToDB: (serial, filename, data) => ipcRenderer.invoke('db:save-pdf', { serial, filename, data }),
+
   listLogs: () => ipcRenderer.invoke('db:list-logs'),
 
   loadLog: (logFileId) => ipcRenderer.invoke('db:load-log', logFileId),

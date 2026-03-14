@@ -88,8 +88,9 @@ ipcMain.handle('dialog:save-file', async (event, { data, defaultName, filters })
 
 // ── App Lifecycle ───────────────────────────────
 app.whenReady().then(() => {
-  // Dosya depolamayı başlat (uygulama klasöründe)
-  storage.init(app.getAppPath());
+  // Dosya depolamayı başlat (Uygulamanın çalıştığı klasörde)
+  const userDataPath = app.isPackaged ? path.dirname(app.getPath('exe')) : __dirname;
+  storage.init(userDataPath);
   console.log('Log depolama klasörü:', storage.getStoragePath());
 
   // IPC handler'larını kaydet

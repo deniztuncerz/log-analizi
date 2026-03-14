@@ -196,21 +196,6 @@ tr.tr-p td{background:rgba(217,119,6,.03)}
 .rcab p,.rcab ul{font-size:12px;color:var(--txt2);line-height:1.75}
 .rcab ul{padding-left:15px}.rcab li{margin-bottom:2px}
 
-/* AI */
-.aipan{background:var(--s1);border:1.5px solid var(--b1);border-top:2px solid var(--acc);border-radius:var(--rl);padding:16px 18px;margin-bottom:12px;box-shadow:var(--sh)}
-.aihdr{display:flex;align-items:center;gap:8px;margin-bottom:11px}
-.aibdg{font-family:var(--mono);font-size:9px;letter-spacing:.1em;padding:2px 8px;border-radius:20px;background:var(--accg2);color:var(--acc);border:1px solid rgba(26,110,245,.25);text-transform:uppercase}
-.aibody{font-size:12px;color:var(--txt2);line-height:1.8}
-.aibody h3{font-size:11px;font-weight:600;color:var(--acc);margin:12px 0 5px;font-family:var(--mono)}
-.aibody ul,.aibody ol{padding-left:16px;margin-bottom:7px}
-.aibody li{margin-bottom:2px}.aibody strong{color:var(--txt);font-weight:600}
-.spinner{width:14px;height:14px;border:2px solid var(--b2);border-top-color:var(--acc);border-radius:50%;animation:spin .7s linear infinite;display:inline-block}
-@keyframes spin{to{transform:rotate(360deg)}}
-.aigen{display:flex;align-items:center;gap:6px;padding:6px 13px;background:var(--accg2);border:1.5px solid rgba(26,110,245,.28);border-radius:var(--r);color:var(--acc);font-family:var(--mono);font-size:11px;font-weight:500;cursor:pointer;transition:all .13s}
-.aigen:hover{background:var(--acc);color:#fff}
-.aigen:disabled{opacity:.4;cursor:not-allowed}
-.aigen svg{width:12px;height:12px;fill:currentColor}
-
 /* FAULT CODE TABLE */
 .fctbl{width:100%;border-collapse:collapse;font-size:11px}
 .fctbl th{background:var(--s2);padding:6px 10px;text-align:left;font-family:var(--mono);font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:var(--txt4);border-bottom:1.5px solid var(--b1)}
@@ -250,19 +235,6 @@ tr.tr-p td{background:rgba(217,119,6,.03)}
       </div>
       <div class="expg" id="expg" style="display:none">
         <button class="ebtn" onclick="exportPDF()"><svg viewBox="0 0 12 12"><path d="M2 1h5.5L10 3.5V11H2V1zm5.5 0v2.5H10M4 5h4M4 7h4M4 9h2" stroke="currentColor" stroke-width="1" fill="none" stroke-linecap="round"/></svg>PDF</button>
-      </div>
-      <div class="api-wrap" style="gap:8px;padding:3px 6px">
-        <div style="display:flex;align-items:center;gap:4px">
-          <label style="font-size:9px;font-family:var(--mono);color:var(--txt4);letter-spacing:.05em">SAĞLAYICI</label>
-          <select id="aiProvider" onchange="updateProviderPlaceholder()" class="prov-sel">
-            <option value="claude">Claude (Anthropic)</option>
-            <option value="gemini">Gemini (Google)</option>
-          </select>
-        </div>
-        <div style="display:flex;align-items:center;gap:4px">
-          <label style="font-size:9px;font-family:var(--mono);color:var(--txt4);letter-spacing:.05em">API KEY</label>
-          <input class="api-in" type="password" id="apiKey" placeholder="sk-ant-..." autocomplete="off" style="width:140px">
-        </div>
       </div>
       <button class="ubtn" onclick="openFileElectron()">
         <svg viewBox="0 0 12 12"><path d="M6 1L3 4h2v4h2V4h2L6 1zM1 10v1h10v-1H1z"/></svg>Dosya Yükle
@@ -385,17 +357,6 @@ tr.tr-p td{background:rgba(217,119,6,.03)}
       <div class="page" id="pg-rca">
         <div class="ph">
           <div><div class="ptitle" id="rca-t">Teşhis Raporu</div><div id="rca-s"></div></div>
-          <button class="aigen" id="aiBtn" onclick="runAI()"><svg viewBox="0 0 12 12"><path d="M6 1l1.3 3.5H11L8.1 6.5l1.3 4L6 8.5 2.6 10.5l1.3-4L1 4.5h3.7L6 1z"/></svg>AI Teşhis Yap</button>
-        </div>
-        <div id="ai-sec" style="display:none">
-          <div class="aipan">
-            <div class="aihdr">
-              <span class="aibdg" id="ai-provider-badge">Claude AI</span>
-              <span style="font-size:12px;color:var(--txt2)">Yapay Zeka Teşhisi</span>
-              <span style="margin-left:auto;font-size:10px;font-family:var(--mono);color:var(--txt4)" id="ai-model-label"></span>
-            </div>
-            <div class="aibody" id="ai-body"></div>
-          </div>
         </div>
         <div id="rca-cont"></div>
       </div>
@@ -497,7 +458,6 @@ document.addEventListener('drop',e=>{e.preventDefault();handleFiles(e.dataTransf
 // ── FILE HANDLING ───────────────────────────────
 function handleFiles(fl){
   DB={};active=null;killCharts();
-  document.getElementById('ai-sec').style.display='none';
   document.getElementById('evlist').innerHTML='';
   document.getElementById('dt-body').innerHTML='';
   document.getElementById('rca-cont').innerHTML='';
@@ -512,6 +472,7 @@ function handleFiles(fl){
     r.onload=e=>{
       const p=parseLog(e.target.result,f.name);
       if(!p){toast('Format taninamadi: '+f.name,'err');loading(false);return}
+      p.rawContent = e.target.result; // Add raw content so it can be saved properly
       DB[f.name]=p;if(!active)active=f.name;
       renderTabs();renderOv();renderAll();
       loading(false);toast(f.name+' yuklendi','ok');
@@ -519,7 +480,7 @@ function handleFiles(fl){
       
       // Auto-save to DB if in Electron
       if (window.electronAPI) {
-        saveLogToDB(p, e.target.result);
+        saveLogToDB(p, p.rawContent);
         loadNoteFromDB(p.serial);
         loadCustomerFromDB(p.serial);
       }
@@ -655,7 +616,7 @@ function buildRCA(faults,warns,fm,fcMap,s){
   if(fm['Output DC Offset Fault']&&!fm['Bus Soft-start Failure'])r.push({t:'warning',h:'Output DC Offset',p:'Çıkışta kalıcı DC bileşeni. İnverter çıkış filtresi veya kontrol kartı incelenmeli.'});
   if(fm['Bus Over Fault'])r.push({t:'danger',h:'Bus Asiri Voltaj (F08)',p:`DC bara üst sınırı aştı. PV dizisi Voc sınırı (500 VDC) aşılmış olabilir. Limit: ${KW_LIMIT.toLocaleString()} W.`});
   if(fm['Bus Under Fault'])r.push({t:'danger',h:'Bus Dusuk Voltaj (F52)',p:'Yüksek yük altında batarya yetersizliği ile ilişkili olabilir.'});
-  if(fm['Over-Temperature Warning'])r.push({t:'warning',h:`Aşırı Isı (${fm['Over-Temperature Warning'].n}×)`,p:'Fan ve soğutma kanallarını kontrol edin. Çalışma aralığı: -10°C ile 50°C.'});
+  if(fm['Over-Temperature Warning'])r.push({t:'warning',h:`Aşırı Isı (${fm['Over-Temperature Warning'].n}×)`,p:'Fan ve soğutma kanallarını kontrol edin. Çalışma aralığı: -10 C ile 50 C.'});
   if(s.zero>3)r.push({t:'warning',h:`Derin Batarya Deşarjı (${s.zero}× %0)`,p:`Min voltaj: ${isFinite(s.minBv)?s.minBv.toFixed(1)+'V':'—'}. Batarya SOH testi önerilir.`});
   if(isFinite(s.maxBv)&&s.maxBv>66)r.push({t:'warning',h:'Batarya Aşırı Voltaj',p:`Max: ${s.maxBv.toFixed(1)}V. Donanımsal üst limit 63–66V. Şarj parametreleri gözden geçirilmeli.`});
   if(fm['Battery Weak Warning'])r.push({t:'warning',h:'Batarya Zayıf (Erken Uyarı)',p:'İç direnç artışı ve yük altında voltaj sarkması gözlendi.'});
@@ -682,7 +643,7 @@ function renderTabs(){
   const tot=Object.values(DB).filter(f=>f.an.faults.length).length;
   const fb=document.getElementById('fbdg');fb.style.display=tot?'':'none';fb.textContent=tot;
 }
-function sel(n){active=n;renderTabs();renderAll();document.getElementById('ai-sec').style.display='none';}
+function sel(n){active=n;renderTabs();renderAll();}
 function del(e,n){e.stopPropagation();delete DB[n];if(active===n)active=Object.keys(DB)[0]||null;renderTabs();renderOv();if(active)renderAll();else clearAll();}
 
 // ── OVERVIEW ─────────────────────────────────────
@@ -702,7 +663,7 @@ function renderOv(){
       return`<tr>
         <td><span class="fc-pill">F${code}</span></td>
         <td style="font-size:11px">${def?def[0]:'—'}</td>
-        <td><span class="cnt-pill">${cnt} gün</span></td>
+        <td><span class="cnt-pill">${cnt} hata</span></td>
       </tr>`;
     }).join('');
 
@@ -723,16 +684,16 @@ function renderOv(){
           <div style="display:flex;align-items:center;gap:8px">
             <div style="font-family:var(--mono);font-size:14px;font-weight:500;color:var(--txt)" id="serial-display-${f.serial}">
               ${editSerialMode[f.serial] ? 
-                `<div style="display:flex;align-items:center;gap:4px">
+                `<div style="display:flex;align-items:center;gap:4px;position:relative;z-index:50;-webkit-app-region:no-drag">
                   <span style="color:var(--txt2)">TT</span>
                   <input type="text" id="serial-edit-${f.serial}" value="${f.serial.replace('TT','')}" maxlength="11"
-                    onkeypress="return event.charCode >= 48 && event.charCode <= 57"
-                    style="background:var(--s2);border:1px solid var(--acc);border-radius:4px;padding:2px 6px;font-family:var(--mono);font-size:13px;color:var(--txt);outline:none;width:110px">
-                  <button class="ebtn" onclick="onaylaSeri('${n}', '${f.serial}')" style="padding:2px 6px;font-size:10px;background:var(--green)22;color:var(--green);border-color:var(--green)44">Onayla</button>
-                  <button class="ebtn" onclick="editSerialMode['${f.serial}']=false;renderOv()" style="padding:2px 6px;font-size:10px">İptal</button>
+                     onkeypress="return event.charCode >= 48 && event.charCode <= 57" onkeydown="event.stopPropagation()"
+                    style="background:var(--s1);border:1px solid var(--acc);border-radius:4px;padding:2px 6px;font-family:var(--mono);font-size:13px;color:var(--txt);outline:none;width:110px;pointer-events:auto;z-index:60">
+                  <button class="ebtn" onclick="onaylaSeri('${n}', '${f.serial}')" style="padding:2px 6px;font-size:10px;background:var(--green)22;color:var(--green);border-color:var(--green)44;pointer-events:auto">Onayla</button>
+                  <button class="ebtn" onclick="editSerialMode['${f.serial}']=false;renderOv()" style="padding:2px 6px;font-size:10px;pointer-events:auto">İptal</button>
                 </div>` : 
-                `<span>${f.serial}</span>
-                 <button class="ebtn" onclick="editSerialMode['${f.serial}']=true;renderOv()" style="padding:2px;background:transparent;border:none;color:var(--txt4);cursor:pointer;display:inline-flex;vertical-align:middle;margin-left:4px" title="Seri No Düzenle">
+                `<span style="position:relative;z-index:50;-webkit-app-region:no-drag">${f.serial}</span>
+                 <button class="ebtn" onclick="editSerialMode['${f.serial}']=true;renderOv()" style="padding:2px;background:transparent;border:none;color:var(--txt4);cursor:pointer;display:inline-flex;vertical-align:middle;margin-left:4px;pointer-events:auto;z-index:50;-webkit-app-region:no-drag" title="Seri No Düzenle">
                    <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
                  </button>`
               }
@@ -740,27 +701,33 @@ function renderOv(){
           </div>
           <div style="font-size:10px;color:var(--txt4);font-family:var(--mono);margin-top:1px">${n} · ${a.dr}</div>
           <div style="display:flex;align-items:center;gap:6px;margin-top:6px">
-            <div id="cust-wrap-${f.serial}" style="display:flex;align-items:center;gap:6px">
+            <div id="cust-wrap-${f.serial}" style="display:flex;align-items:center;gap:6px;position:relative;z-index:50;-webkit-app-region:no-drag">
               ${customerEditMode[f.serial] ? 
-                `<input type="text" id="cust-in-${f.serial}" value="${customerNames[f.serial]||''}" placeholder="Müşteri Adı..."
-                  style="background:var(--s2);border:1px solid var(--acc);border-radius:4px;padding:3px 8px;font-family:var(--sans);font-size:11px;color:var(--txt);outline:none;width:150px">
-                 <button class="ebtn" onclick="onaylaMusteri('${f.serial}')" style="padding:3px 8px;font-size:10px;background:var(--green)22;color:var(--green);border-color:var(--green)44">Onayla</button>` :
-                `<span style="font-size:12px;color:var(--txt2);font-weight:500">${customerNames[f.serial] || '<span style="color:var(--txt4);font-weight:400;font-style:italic">Müşteri ismi yok</span>'}</span>
-                 <button class="ebtn" onclick="toggleCustomerEdit('${f.serial}')" style="padding:2px;background:transparent;border:none;color:var(--txt4);cursor:pointer;display:flex" title="Düzenle">
+                `<input type="text" id="cust-in-${f.serial}" value="${customerNames[f.serial]||''}" placeholder="Müşteri Adı..." onkeydown="event.stopPropagation()"
+                  style="background:var(--s1);border:1px solid var(--acc);border-radius:4px;padding:3px 8px;font-family:var(--sans);font-size:11px;color:var(--txt);outline:none;width:150px;pointer-events:auto;z-index:60">
+                 <button class="ebtn" onclick="onaylaMusteri('${f.serial}')" style="padding:3px 8px;font-size:10px;background:var(--green)22;color:var(--green);border-color:var(--green)44;pointer-events:auto">Onayla</button>` :
+                `<span style="font-size:12px;color:var(--txt2);font-weight:500;pointer-events:auto">${customerNames[f.serial] || '<span style="color:var(--txt4);font-weight:400;font-style:italic">Müşteri ismi yok</span>'}</span>
+                 <button class="ebtn" onclick="toggleCustomerEdit('${f.serial}')" style="padding:2px;background:transparent;border:none;color:var(--txt4);cursor:pointer;display:flex;pointer-events:auto;z-index:50" title="Düzenle">
                    <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                  </button>`
               }
             </div>
           </div>
+          <div style="margin-top:8px;-webkit-app-region:no-drag;position:relative;z-index:50">
+            <button class="ebtn" onclick="exportPDF(true)" style="padding:4px 10px;font-size:10px;background:var(--accb);color:var(--acc);display:flex;align-items:center;gap:4px;pointer-events:auto" title="PDF Raporunu ve Veritabanı Geçmişini Arka Planda Yeniden Oluştur">
+              <svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2" fill="none"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+              Geçmişi & PDF'i Güncelle
+            </button>
+          </div>
         </div>
         <div style="font-family:var(--mono);font-size:10px;font-weight:600;color:${sc};background:${sc}18;padding:3px 11px;border-radius:20px;border:1px solid ${sc}40">${sl}</div>
       </div>
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px">
-        ${[['FAULT OLAYI',a.faults.length,a.faults.length?'red':'green'],['UYARI OLAYI',a.warns.length,a.warns.length>5?'amber':''],['LİMİT AŞIMI',a.limitViolations.length,a.limitViolations.length?'amber':''],['DERİN DEŞARJ',a.zero+'×',a.zero>3?'red':'']]
+        ${[['HATA OLAYI',a.faults.length,a.faults.length?'red':'green'],['UYARI OLAYI',a.warns.length,a.warns.length>5?'amber':''],['LİMİT AŞIMI',a.limitViolations.length,a.limitViolations.length?'amber':''],['DERİN DEŞARJ',a.zero+'×',a.zero>3?'red':'']]
           .map(([l,v,c])=>`<div style="background:var(--s2);border:1px solid var(--b1);border-radius:var(--r);padding:10px 12px"><div style="font-family:var(--mono);font-size:9px;color:var(--txt4);margin-bottom:3px">${l}</div><div style="font-family:var(--mono);font-size:17px;font-weight:500;color:${c?'var(--'+c+')':'var(--txt)'}">${v}</div></div>`).join('')}
       </div>
       ${fcRows?`<div class="ch" style="margin-bottom:10px">Hata Kodu Özeti (Günlük Unique)<div class="chl"></div></div>
-      <div class="tw" style="margin-bottom:14px"><table class="fstbl"><thead><tr><th>Kod</th><th>Açıklama</th><th>Gün Sayısı</th></tr></thead><tbody>${fcRows}</tbody></table></div>`
+      <div class="tw" style="margin-bottom:14px"><table class="fstbl"><thead><tr><th>Kod</th><th>Açıklama</th><th>Hata Sayısı</th></tr></thead><tbody>${fcRows}</tbody></table></div>`
       :''}
       <div class="ch" style="margin-bottom:10px">Min/Max Değerler vs ${KW_LIMIT===11000?'11 kW':'7.2 kW'} Cihaz Limitleri<div class="chl"></div></div>
       <div class="tw"><table class="mmtbl"><thead><tr><th>Parametre</th><th>Ölçülen</th><th>Limit</th><th>Durum</th></tr></thead>
@@ -857,7 +824,7 @@ function exportDataLogExcel(){
   });
   const filtLabel=curDtFilt==='all'?'Tumu':curDtFilt==='limitout'?'LimitDisi':curDtFilt.charAt(0).toUpperCase()+curDtFilt.slice(1);
   XLSX.utils.book_append_sheet(wb,ws,'Veri Gunlugu ('+filtLabel+')');
-  const fname=`MPLUS_${f.serial}_VeriGunlugu_${filtLabel}_${new Date().toISOString().slice(0,10)}.xlsx`;
+  const fname=`${f.serial}_VeriGunlugu_Tumu_${new Date().toISOString().slice(0,10)}.xlsx`;
   XLSX.writeFile(wb,fname,{cellStyles:true});
   toast('Excel indirildi ('+rows.length+' satir)','ok');
 }
@@ -976,8 +943,8 @@ function renderRCA(f){
   const fcTbl=Object.entries(a.fcCountMap).length?`
     <div class="card" style="margin-bottom:14px">
       <div class="ch">Hata Kodu Dağılımı (Günlük Unique)<div class="chl"></div></div>
-      <div class="tw"><table class="fstbl"><thead><tr><th>Kod</th><th>Açıklama (TR)</th><th>Gün Sayısı</th></tr></thead><tbody>
-        ${Object.entries(a.fcCountMap).map(([c,n])=>{const d=FAULT_CODES[c.padStart(2,'0')];return`<tr><td><span class="fc-pill">F${c}</span></td><td>${d?d[0]:'—'}</td><td><span class="cnt-pill">${n} gün</span></td></tr>`;}).join('')}
+      <div class="tw"><table class="fstbl"><thead><tr><th>Kod</th><th>Açıklama</th><th>Hata Sayısı</th></tr></thead><tbody>
+        ${Object.entries(a.fcCountMap).map(([c,n])=>{const d=FAULT_CODES[c.padStart(2,'0')];return`<tr><td><span class="fc-pill">F${c}</span></td><td>${d?d[0]:'—'}</td><td><span class="cnt-pill">${n} hata</span></td></tr>`;}).join('')}
       </tbody></table></div>
     </div>`:'' ;
   const stats=`<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px">
@@ -996,266 +963,6 @@ function renderFaultCodes(){
   }).join('');
   document.getElementById('wc-body').innerHTML=Object.entries(WARN_CODES).map(([c,[tr,en]])=>`<tr><td style="font-family:var(--mono);font-weight:600;color:var(--amber)">W${c}</td><td>${tr}</td><td style="color:var(--txt4)">${en}</td><td>—</td></tr>`).join('');
 }
-
-// ── AI ───────────────────────────────────────────
-
-// ── AI PROVIDER CONFIG ──────────────────────────
-const DEVICE_PROMPTS = {
-  7200: `Sen MPLUS 7.2kW invertör sistemleri konusunda uzmanlasmis bir güc elektronigi ve yenilenebilir enerji servis muhendisisin.
-
-=== MPLUS 7.2kW CIHAZ TEKNiK BELGESi ===
-Nominal Cikis Gucu: 7.200 VA / 7.200 W
-Pik (Surge) Gucu: 14.400 VA (5 saniyeye kadar)
-AC Cikis Voltaji: 230 VAC (+/- %5)
-Frekans: 50 Hz / 60 Hz
-
-Solar (PV) Giris:
-- Max PV Dizi Gucu: 7.000 W
-- Max PV Voc (Kritik): 500 VDC - ASIMASI DONANIM HASARINA YOL ACAR
-- MPPT Calisma Araliga: 90-450 VDC
-- Min PV Baslangic Voltaji: 90 VDC
-
-Batarya (Aku):
-- Nominal Voltaj: 48 VDC
-- Max Solar Sarj Akimi: 100 A
-- Max Sebeke (AC) Sarj Akimi: 100 A
-- Asiri Sarj (Overcharge) Donanimsal Limit: 63-66 VDC
-- Alarm Esigi: ~58-60 VDC
-
-Sebeke (AC) Giris Limitleri:
-- UPS modunda: 170-280 VAC
-- Ev aletleri modunda: 90-280 VAC
-- Max Dayanim: 300 VAC
-
-Ortam Kosullari:
-- Calisma Sicakligi: -10C ile 50C
-- Nem: %5-95 (yogusmasiz)
-
-Hata Kodlari:
-F01: Fan kilitli (invertor kapali) | F02: Asiri isinma | F03: Aku voltaji yuksek
-F04: Aku voltaji dusuk | F05: Cikis kisa devresi | F06: Cikis voltaji yuksek
-F07: Asiri yuk zaman asimi | F08: Bara voltaji yuksek | F09: Bara soft-start basarisiz
-F10: PV asiri akim | F11: PV asiri voltaj | F12: DC-DC asiri akim
-F13: Aku desarj asiri akim | F51: Genel asiri akim | F52: Bara voltaji dusuk
-F53: Invertor soft-start basarisiz | F55: AC cikista DC voltaj
-F57: Akim sensoru arizasi | F58: Cikis voltaji dusuk
-F81: Bara baslama hatasi | F83: Invertor baslama hatasi
-
-Onemli Limit Degerler (bu analizde kullanilacak referans):
-- Max Cikis Gucu: 7.200 W (asimasi kritik asiri yuk durumu)
-- Min Batarya Voltaji: 44 VDC (altinda derin desarj)
-- Max Batarya Voltaji: 66 VDC (ustunde asiri sarj)
-- Max PV Voltaji: 500 VDC (asimasi donanim hasari)
-- Sebeke Kabul Araliga: 90-280 VAC
-=== BELGE SONU ===`,
-  11000: `Sen MPLUS 11kW invertör sistemleri konusunda uzmanlasmis bir güc elektronigi ve yenilenebilir enerji servis muhendisisin.
-
-=== MPLUS 11kW CIHAZ TEKNiK BELGESi ===
-Nominal Cikis Gucu: 11.000 VA / 11.000 W
-Pik (Surge) Gucu: 22.000 VA (5 saniyeye kadar)
-AC Cikis Voltaji: 230 VAC (+/- %5)
-Frekans: 50 Hz / 60 Hz
-
-Solar (PV) Giris:
-- Max PV Dizi Gucu: 11.000 W (cift MPPT destekler)
-- Max PV Voc (Kritik): 500 VDC - ASIMASI DONANIM HASARINA YOL ACAR
-- MPPT Calisma Araliga: 90-450 VDC
-- Min PV Baslangic Voltaji: 90 VDC
-
-Batarya (Aku):
-- Nominal Voltaj: 48 VDC
-- Max Solar Sarj Akimi: 150 A
-- Max Sebeke (AC) Sarj Akimi: 150 A
-- Asiri Sarj (Overcharge) Donanimsal Limit: 63-66 VDC
-
-Sebeke (AC) Giris Limitleri:
-- UPS modunda: 170-280 VAC
-- Ev aletleri modunda: 90-280 VAC
-- Max Dayanim: 300 VAC
-
-Ortam Kosullari:
-- Calisma Sicakligi: -10C ile 50C
-- Nem: %5-95 (yogusmasiz)
-
-Hata Kodlari:
-F01: Fan kilitli (invertor kapali) | F02: Asiri isinma | F03: Aku voltaji yuksek
-F04: Aku voltaji dusuk | F05: Cikis kisa devresi | F06: Cikis voltaji yuksek
-F07: Asiri yuk zaman asimi | F08: Bara voltaji yuksek | F09: Bara soft-start basarisiz
-F10: PV asiri akim | F11: PV asiri voltaj | F12: DC-DC asiri akim
-F13: Aku desarj asiri akim | F51: Genel asiri akim | F52: Bara voltaji dusuk
-F53: Invertor soft-start basarisiz | F55: AC cikista DC voltaj
-F57: Akim sensoru arizasi | F58: Cikis voltaji dusuk
-F81: Bara baslama hatasi | F83: Invertor baslama hatasi
-
-Onemli Limit Degerler (bu analizde kullanilacak referans):
-- Max Cikis Gucu: 11.000 W (asimasi kritik asiri yuk durumu)
-- Min Batarya Voltaji: 44 VDC (altinda derin desarj)
-- Max Batarya Voltaji: 66 VDC (ustunde asiri sarj)
-- Max PV Voltaji: 500 VDC (asimasi donanim hasari)
-- Sebeke Kabul Araliga: 90-280 VAC
-=== BELGE SONU ===`
-};
-
-function updateProviderPlaceholder(){
-  const p=document.getElementById('aiProvider').value;
-  const inp=document.getElementById('apiKey');
-  if(p==='claude'){inp.placeholder='sk-ant-...';}
-  else if(p==='gemini'){inp.placeholder='AIza...';}
-}
-
-function buildAnalysisPrompt(f,a){
-  const fcSum=Object.entries(a.fcCountMap).map(([c,n])=>{
-    const d=FAULT_CODES[c.padStart(2,'0')];
-    return `F${c}(${d?d[0]:'?'}): ${n} gun`;
-  }).join(', ');
-  const topEv=f.evLog.filter(e=>e.sev==='fault'||e.fc!=='00').slice(0,20)
-    .map(e=>`[${e.ts}] ${MODES[e.md]} | ${e.flags.map(fl=>fl.name).join('+')||'-'} | F${e.fc}`).join('\n');
-  const limViols=a.limitViolations.map(v=>`${v.ts} - ${v.label}: ${typeof v.val==='number'?v.val.toFixed(1):v.val}${v.unit} (limit:${v.limit}${v.unit})`).join('\n');
-
-  return `=== LOG ANALiZ VERiSi ===
-CiHAZ: ${f.serial} | MODEL: ${KW_LIMIT===11000?'11 kW':'7.2 kW'} | DONEM: ${a.dr}
-TOPLAM OLAY: ${f.evLog.length} | VERi: ${f.dtLog.length}
-FAULT OLAYI: ${a.faults.length} | UYARI: ${a.warns.length}
-HATA KODLARI: ${fcSum||'Yok'}
-MIN BATARYA: ${isFinite(a.minBv)?a.minBv.toFixed(1)+'V':'-'} | MAX BATARYA: ${isFinite(a.maxBv)?a.maxBv.toFixed(1)+'V':'-'}
-MAX PV: ${isFinite(a.maxPv)?a.maxPv.toFixed(0)+'V':'-'} | MAX CIKIS: ${isFinite(a.maxOw)&&a.maxOw>0?a.maxOw.toFixed(0)+'W':'-'} (limit:${KW_LIMIT}W)
-DERIN DESARJ: ${a.zero}x
-
-KRITIK OLAYLAR:
-${topEv||'Fault olayi yok'}
-
-LiMiT ASIMLARI (gunluk unique):
-${limViols||'Limit asimi yok'}
-=== VERi SONU ===
-
-Yukaridaki cihaz teknik belgesi ve log verilerine gore:
-1) KOK NEDEN ANALiZi - Hangi bilesenler arizali, neden?
-2) ARIZA ZAMAN CiZELGESi - Olaylar nasil birbirini tetikledi?
-3. ACiL MUDAHALELEr - Oncelik sirasina gore teknik adimlar
-4) ONLEYiCi BAKIM - Gelecek arizalari onlemek icin
-
-Turkce, teknik ve anlasilir yaz. Markdown formatinda.`;
-}
-
-async function callClaude(apiKey, systemPrompt, userPrompt){
-  const resp = await fetch('https://api.anthropic.com/v1/messages',{
-    method:'POST',
-    headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-    body:JSON.stringify({
-      model:'claude-sonnet-4-20250514',
-      max_tokens:2000,
-      system: systemPrompt,
-      messages:[{role:'user',content:userPrompt}]
-    })
-  });
-  if(!resp.ok){const e=await resp.json();throw new Error(e.error?.message||'HTTP '+resp.status);}
-  const data=await resp.json();
-  return data.content?.[0]?.text||'Yanit alinamadi.';
-}
-
-// Gemini model cascade: newest free models first
-async function callGemini(apiKey, systemPrompt, userPrompt){
-  // Gemini 1.5 Flash - Hızlı ve uygun maliyetli sürüm
-  // Model adi: gemini-1.5-flash
-  const GEMINI_MODEL='gemini-1.5-flash';
-  const BASE='https://generativelanguage.googleapis.com';
-
-  // Once v1beta endpoint dene (systemInstruction destegi)
-  const endpoints=[
-    {
-      url:`${BASE}/v1beta/models/${GEMINI_MODEL}:generateContent?key=${apiKey}`,
-      body:{
-        systemInstruction:{parts:[{text:systemPrompt}]},
-        contents:[{role:'user',parts:[{text:userPrompt}]}],
-        generationConfig:{maxOutputTokens:2000,temperature:0.4}
-      }
-    },
-    // v1 endpoint fallback (sistem talimatini user mesajina ekle)
-    {
-      url:`${BASE}/v1/models/${GEMINI_MODEL}:generateContent?key=${apiKey}`,
-      body:{
-        contents:[{role:'user',parts:[{text:systemPrompt+'\n\n---\n\n'+userPrompt}]}],
-        generationConfig:{maxOutputTokens:2000,temperature:0.4}
-      }
-    }
-  ];
-
-  let lastStatus='', lastBody='';
-  for(const ep of endpoints){
-    let resp;
-    try{
-      resp=await fetch(ep.url,{
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify(ep.body)
-      });
-    }catch(netErr){
-      throw new Error('Ag hatasi: '+netErr.message+'. Tarayici CORS engelliyor olabilir veya internet baglantisi yok.');
-    }
-    lastStatus=resp.status;
-    const raw_txt=await resp.text();
-    lastBody=raw_txt.slice(0,300);
-    if(!resp.ok){
-      let errMsg='';
-      try{const ej=JSON.parse(raw_txt);errMsg=ej.error?.message||'';}catch(_){}
-      console.warn('Gemini endpoint failed:',ep.url,'status:',resp.status,'body:',raw_txt.slice(0,200));
-      // 404 = model yok, 400 = istek hatasi, 403 = API key sorunu, devam et
-      if(resp.status===403){
-        throw new Error('API anahtari gecersiz veya "Generative Language API" etkinlestirilmemis. Google Cloud Console > APIs & Services > Enable API kontrol edin. Hata: '+errMsg);
-      }
-      continue; // baska endpoint dene
-    }
-    let data;
-    try{data=JSON.parse(raw_txt);}catch(_){throw new Error('Gecersiz JSON yaniti: '+raw_txt.slice(0,100));}
-    const text=data.candidates?.[0]?.content?.parts?.[0]?.text;
-    if(!text){
-      const blockReason=data.candidates?.[0]?.finishReason||data.promptFeedback?.blockReason||'bilinmiyor';
-      throw new Error('Gemini bos yanit dondu. Sebep: '+blockReason);
-    }
-    document.getElementById('ai-model-label').textContent=GEMINI_MODEL;
-    return text;
-  }
-  throw new Error(`Gemini yanit vermedi. Son durum: HTTP ${lastStatus}. Yanit: ${lastBody}`);
-}
-
-async function runAI(){
-  const provider=document.getElementById('aiProvider').value;
-  const key=document.getElementById('apiKey').value.trim();
-  if(!key){toast('API anahtari giriniz','err');return}
-  if(!active||!DB[active]){toast('Once dosya seciniz','err');return}
-  const f=DB[active],a=f.an;
-  const btn=document.getElementById('aiBtn');
-  btn.disabled=true;
-  document.getElementById('ai-sec').style.display='';
-  const providerName=provider==='claude'?'Claude (Anthropic)':'Gemini (Google)';
-  const modelName=provider==='claude'?'claude-sonnet-4-20250514':'gemini-2.0-flash';
-  document.getElementById('ai-provider-badge').textContent=provider==='claude'?'Claude AI':'Gemini AI';
-  document.getElementById('ai-provider-badge').style.background=provider==='claude'?'var(--accg2)':'rgba(66,133,244,.12)';
-  document.getElementById('ai-provider-badge').style.color=provider==='claude'?'var(--acc)':'#4285f4';
-  document.getElementById('ai-model-label').textContent=modelName;
-  document.getElementById('ai-body').innerHTML=`<div style="display:flex;align-items:center;gap:8px;color:var(--txt4);font-family:var(--mono);font-size:11px"><div class="spinner"></div>${providerName} analiz yapiyor...</div>`;
-
-  const systemPrompt=DEVICE_PROMPTS[KW_LIMIT]||DEVICE_PROMPTS[7200];
-  const userPrompt=buildAnalysisPrompt(f,a);
-
-  try{
-    let result='';
-    if(provider==='claude'){
-      result=await callClaude(key,systemPrompt,userPrompt);
-    }else if(provider==='gemini'){
-      result=await callGemini(key,systemPrompt,userPrompt);
-    }
-    document.getElementById('ai-body').innerHTML=md2html(result);
-    toast(providerName+' teşhis tamamlandi','ok');
-  }catch(err){
-    document.getElementById('ai-body').innerHTML=`<div style="color:var(--red);font-family:var(--mono);font-size:11px">Hata (${providerName}): ${err.message}<br><span style="color:var(--txt4)">API anahtarini ve internet baglantisinizi kontrol edin.</span></div>`;
-    toast(providerName+' hatasi','err');
-  }
-  btn.disabled=false;
-}
-
-
-function md2html(md){return md.replace(/### (.+)/g,'<h3>$1</h3>').replace(/## (.+)/g,'<h3>$1</h3>').replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/^\d+\. (.+)/gm,'<li>$1</li>').replace(/^- (.+)/gm,'<li>$1</li>').replace(/(<li>.*<\/li>\n?)+/gs,m=>`<ul>${m}</ul>`).replace(/\n{2,}/g,'<br><br>');}
 
 // ── PDF CHART RENDERER (offscreen) ───────────────
 // Turkish char safe for jsPDF helvetica
@@ -1310,9 +1017,9 @@ function renderChartOffscreen(type, datasets, labels, width, height){
 }
 
 // ── PDF EXPORT (jsPDF) ───────────────────────────
-async function exportPDF(){
-  if(!active||!DB[active]){toast('Önce dosya seçiniz','err');return}
-  toast('PDF hazırlanıyor...','inf');
+async function exportPDF(silent = false){
+  if(!active||!DB[active]){if(!silent)toast('Önce dosya seçiniz','err');return}
+  if(!silent)toast('PDF hazırlanıyor...','inf');
   // Build all charts offscreen first
   let chartImgs={};
   try{
@@ -1362,9 +1069,9 @@ async function exportPDF(){
     // Header
     doc.setFillColor(26,110,245);doc.rect(0,0,210,12,'F');
     doc.setTextColor(255,255,255);doc.setFontSize(12);doc.setFont('helvetica','bold');
-    doc.text('MPLUS Invertor Log Analiz Raporu',10,8);
+    doc.text('Log Analiz Raporu',10,8);
     doc.setFontSize(8);doc.setFont('helvetica','normal');
-    doc.text(`${KW_LIMIT===11000?'11 kW':'7.2 kW'} Modeli`,180,8,'right');
+    // Device kW info removed from top right
     y=18;
 
     // Meta
@@ -1378,12 +1085,12 @@ async function exportPDF(){
     const stOk=a.faults.length===0;
     doc.setFillColor(...(stOk?[5,150,105]:[220,38,38]));doc.roundedRect(10,y,pw,8,2,2,'F');
     doc.setTextColor(255,255,255);doc.setFontSize(9);doc.setFont('helvetica','bold');
-    doc.text(stOk?'NORMAL - Kritik ariza tespit edilmedi':`FAULT - ${a.faults.length} fault olayi tespit edildi`,pw/2+10,y+5.5,'center');
+    doc.text(stOk?'NORMAL - Kritik ariza tespit edilmedi':`HATA - ${a.faults.length} hata olayi tespit edildi`,pw/2+10,y+5.5,'center');
     y+=13;
 
     // Summary metrics
     doc.setTextColor(100,116,139);doc.setFontSize(7);doc.setFont('helvetica','normal');
-    const mets=[['FAULT OLAYI',a.faults.length,a.faults.length>0],['UYARI OLAYI',a.warns.length,false],['HATA KODU',Object.keys(a.fcCountMap).length,Object.keys(a.fcCountMap).length>0],['DERIN DESARJ',a.zero+'x',a.zero>3],['MIN BAT V',isFinite(a.minBv)?a.minBv.toFixed(1)+'V':'-',isFinite(a.minBv)&&a.minBv<44.5],['LIMIT ASIMI',a.limitViolations.length+'x',a.limitViolations.length>0]];
+    const mets=[['HATA OLAYI',a.faults.length,a.faults.length>0],['UYARI OLAYI',a.warns.length,false],['HATA KODU',Object.keys(a.fcCountMap).length,Object.keys(a.fcCountMap).length>0],['DERIN DESARJ',a.zero+'x',a.zero>3],['MIN BAT V',isFinite(a.minBv)?a.minBv.toFixed(1)+'V':'-',isFinite(a.minBv)&&a.minBv<44.5],['LIMIT ASIMI',a.limitViolations.length+'x',a.limitViolations.length>0]];
     const mw=pw/6;
     mets.forEach((m,i)=>{
       const mx=10+i*mw,my=y;
@@ -1402,10 +1109,10 @@ async function exportPDF(){
       doc.setTextColor(100,116,139);doc.setFontSize(7);doc.setFont('helvetica','bold');
       doc.text('HATA KODU OZETI (GUNLUK UNIQUE)',10,y);y+=4;
       doc.autoTable({startY:y,
-        head:[['Kod','Aciklama (TR)','Gun Sayisi']],
+        head:[['Kod','Aciklama','Hata Sayisi']],
         body:Object.entries(a.fcCountMap).map(([c,n])=>{
           const d=FAULT_CODES[c.padStart(2,'0')];
-          return[`F${c}`,tp(d?d[0]:'—'),`${n} gun`];
+          return[`F${c}`,tp(d?d[0]:'—'),`${n} hata`];
         }),
         styles:{fontSize:8,cellPadding:2},
         headStyles:{fillColor:[26,110,245],textColor:255,fontSize:7},
@@ -1575,13 +1282,34 @@ async function exportPDF(){
     for(let pi=1;pi<=pcount;pi++){
       doc.setPage(pi);
       doc.setFillColor(248,249,252);doc.rect(0,287,210,10,'F');
-      doc.setTextColor(148,163,184);doc.setFontSize(7);doc.setFont('helvetica','normal');
-      doc.text(`İnvertör Log Analizi v4 - ${f.serial}`,10,293);
+      doc.setTextColor(148,163,184);doc.setFontSize(7);doc.setFont('helvetica','bold');
+      doc.text(`Log Analizi - ${f.serial}`,10,293);
+      doc.setFont('helvetica','normal');
       doc.text(`Sayfa ${pi}/${pcount}`,200,293,'right');
     }
 
-    const pdfBlob=doc.output("blob");const pdfUrl=URL.createObjectURL(pdfBlob);const pdfLink=document.createElement("a");pdfLink.href=pdfUrl;pdfLink.download=`${f.serial}_${new Date().toISOString().slice(0,10)}.pdf`;document.body.appendChild(pdfLink);pdfLink.click();document.body.removeChild(pdfLink);setTimeout(()=>URL.revokeObjectURL(pdfUrl),1000);
-    toast('PDF indirildi','ok');
+    const pdfBlob=doc.output("blob");const pdfUrl=URL.createObjectURL(pdfBlob);
+    const pdfName=`${f.serial}_${new Date().toISOString().slice(0,10)}.pdf`;
+    
+    if(!silent){
+      const pdfLink=document.createElement("a");pdfLink.href=pdfUrl;
+      pdfLink.download=pdfName;document.body.appendChild(pdfLink);pdfLink.click();document.body.removeChild(pdfLink);
+    }
+    setTimeout(()=>URL.revokeObjectURL(pdfUrl),1000);
+    
+    // Auto-save generated PDF to local database via IPC
+    if (window.electronAPI) {
+      const b64Data = doc.output('datauristring').split(',')[1];
+      window.electronAPI.savePDFToDB(f.serial, pdfName, b64Data).then(res => {
+        if (!res.success) {
+          console.error("PDF Auto-Save Error: " + res.error);
+        } else if(silent) {
+          toast('PDF Arka planda güncellendi','ok');
+        }
+      });
+    }
+
+    if(!silent)toast('PDF indirildi','ok');
   }catch(err){
     console.error(err);
     toast('PDF hatasi: '+err.message,'err');
@@ -1600,7 +1328,7 @@ function exportExcel(){
 
   // Fault code summary
   if(Object.keys(a.fcCountMap).length){
-    const fcRows=[['Kod','Açıklama (TR)','Description (EN)','Gün Sayısı (Unique)'],
+    const fcRows=[['Kod','Açıklama','Description (EN)','Hata Sayısı (Unique)'],
       ...Object.entries(a.fcCountMap).map(([c,n])=>{const d=FAULT_CODES[c.padStart(2,'0')];return[`F${c}`,d?d[0]:'—',d?d[1]:'—',n];})];
     XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(fcRows),'Hata Kodu Özeti');
   }
@@ -1722,10 +1450,9 @@ handleFiles = function(fl) {
   // Parse tamamlandıktan sonra DB'ye kaydet (FileReader async olduğundan timeout ile)
   setTimeout(() => {
     Object.entries(DB).forEach(([fname, p]) => {
-      // rawContent'i FileReader'dan almak gerekiyor, handleFiles içinde zaten okunuyor
-      // burada sadece DB'ye kaydetmeyi dene
-      if (window.electronAPI && p) {
-        saveLogToDB(p, '');
+      // p.rawContent is now correctly populated in the onload handler
+      if (window.electronAPI && p && p.rawContent) {
+        saveLogToDB(p, p.rawContent);
         loadNoteFromDB(p.serial);
         loadCustomerFromDB(p.serial);
       }
@@ -1895,9 +1622,44 @@ async function refreshHistory() {
       const sc = log.status === 'fault' ? 'var(--red)' : log.status === 'warn' ? 'var(--amber)' : 'var(--green)';
       const sl = log.status === 'fault' ? 'FAULT' : log.status === 'warn' ? 'UYARI' : 'NORMAL';
       const dt = log.uploaded_at ? new Date(log.uploaded_at).toLocaleString('tr-TR') : '—';
+      
+      const isEditingSer = histEditState[log.id]?.type === 'serial';
+      const isEditingCust = histEditState[log.id]?.type === 'customer';
+
       return `<tr>
-        <td style="font-family:var(--mono);font-weight:500">${log.serial_number}</td>
-        <td style="font-size:11px;color:var(--txt2)">${log.customer_name || '—'}</td>
+        <td style="font-family:var(--mono);font-weight:500">
+          ${isEditingSer ? 
+            `<div style="display:flex;align-items:center;gap:4px;position:relative;z-index:50;-webkit-app-region:no-drag">
+               <span style="color:var(--txt2);font-size:10px">TT</span>
+               <input type="text" id="hist-ser-in-${log.id}" value="${log.serial_number.replace('TT','')}" maxlength="11" onkeypress="return event.charCode >= 48 && event.charCode <= 57" onkeydown="event.stopPropagation()" style="width:70px;background:var(--s1);border:1px solid var(--acc);border-radius:3px;padding:2px 4px;font-family:var(--mono);font-size:11px;color:var(--txt);outline:none;pointer-events:auto;z-index:60">
+               <button class="ebtn" onclick="saveHistSerial('${log.id}', '${log.serial_number}')" style="padding:1px 3px;pointer-events:auto"><svg viewBox="0 0 24 24" width="12" height="12" stroke="var(--green)" stroke-width="2" fill="none"><polyline points="20 6 9 17 4 12"></polyline></svg></button>
+               <button class="ebtn" onclick="cancelEditHist('${log.id}')" style="padding:1px 3px;pointer-events:auto"><svg viewBox="0 0 24 24" width="12" height="12" stroke="var(--red)" stroke-width="2" fill="none"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+             </div>`
+            : 
+            `<div style="display:flex;align-items:center;gap:4px;position:relative;z-index:50;-webkit-app-region:no-drag">
+               <span style="pointer-events:auto">${log.serial_number}</span>
+               <button class="ebtn" onclick="startEditHist('${log.id}', 'serial')" style="padding:0px;background:transparent;border:none;color:var(--txt4);cursor:pointer;pointer-events:auto;z-index:50" title="Düzenle">
+                 <svg viewBox="0 0 24 24" width="11" height="11" stroke="currentColor" stroke-width="2" fill="none"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+               </button>
+             </div>`
+          }
+        </td>
+        <td style="font-size:11px;color:var(--txt2)">
+          ${isEditingCust ? 
+            `<div style="display:flex;align-items:center;gap:4px;position:relative;z-index:50;-webkit-app-region:no-drag">
+               <input type="text" id="hist-cust-in-${log.id}" value="${log.customer_name||''}" onkeydown="event.stopPropagation()" style="width:100px;background:var(--s1);border:1px solid var(--acc);border-radius:3px;padding:2px 4px;font-family:var(--sans);font-size:11px;color:var(--txt);outline:none;pointer-events:auto;z-index:60">
+               <button class="ebtn" onclick="saveHistCustomer('${log.id}', '${log.serial_number}')" style="padding:1px 3px;pointer-events:auto"><svg viewBox="0 0 24 24" width="12" height="12" stroke="var(--green)" stroke-width="2" fill="none"><polyline points="20 6 9 17 4 12"></polyline></svg></button>
+               <button class="ebtn" onclick="cancelEditHist('${log.id}')" style="padding:1px 3px;pointer-events:auto"><svg viewBox="0 0 24 24" width="12" height="12" stroke="var(--red)" stroke-width="2" fill="none"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+             </div>`
+            :
+            `<div style="display:flex;align-items:center;gap:4px;position:relative;z-index:50;-webkit-app-region:no-drag">
+               <span style="pointer-events:auto">${log.customer_name || '—'}</span>
+               <button class="ebtn" onclick="startEditHist('${log.id}', 'customer')" style="padding:0px;background:transparent;border:none;color:var(--txt4);cursor:pointer;pointer-events:auto;z-index:50" title="Düzenle">
+                 <svg viewBox="0 0 24 24" width="11" height="11" stroke="currentColor" stroke-width="2" fill="none"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+               </button>
+             </div>`
+          }
+        </td>
         <td>${log.filename}</td>
         <td style="font-family:var(--mono);font-size:10px">${log.date_range || '—'}</td>
         <td style="font-family:var(--mono)">${log.total_events}</td>
@@ -1921,6 +1683,51 @@ async function refreshHistory() {
   }
 }
 
+// ── LOG GEÇMİŞİ İÇİ EDİT LOGİC ─────────────────
+let histEditState = {};
+function startEditHist(id, type) {
+  histEditState[id] = { type };
+  refreshHistory();
+}
+function cancelEditHist(id) {
+  delete histEditState[id];
+  refreshHistory();
+}
+async function saveHistSerial(id, oldSerial) {
+  const input = document.getElementById('hist-ser-in-' + id);
+  const newDigits = input.value.trim();
+  if (newDigits.length < 1) { toast('Lütfen rakam girin', 'err'); return; }
+  const newSerial = 'TT' + newDigits;
+  
+  if (newSerial === oldSerial) { delete histEditState[id]; refreshHistory(); return; }
+
+  try {
+    toast('Güncelleniyor...', 'inf');
+    const res = await window.electronAPI.renameSerial(oldSerial, newSerial);
+    if(res.success){
+      delete histEditState[id];
+      refreshHistory();
+      toast('Seri numarası güncellendi', 'ok');
+    } else {
+      toast('Hata: ' + (res.error || 'Bilinmiyor'), 'err');
+    }
+  } catch(err) {
+    toast('İşlem başarısız', 'err');
+  }
+}
+async function saveHistCustomer(id, serial) {
+  const input = document.getElementById('hist-cust-in-' + id);
+  const val = input.value;
+  try {
+    await window.electronAPI.saveCustomer(serial, val);
+    delete histEditState[id];
+    refreshHistory();
+    toast('Müşteri ismi kaydedildi', 'ok');
+  } catch(err) {
+    toast('Kaydetme hatası', 'err');
+  }
+}
+
 async function loadFromDB(logFileId) {
   if (!window.electronAPI) return;
   try {
@@ -1934,6 +1741,10 @@ async function loadFromDB(logFileId) {
     document.getElementById('ai-sec').style.display = 'none';
     const p = parseLog(data.rawContent, data.filename);
     if (!p) { toast('Parse hatasi', 'err'); loading(false); return; }
+    // Override outdated serial payload string mapped in raw text with explicit database serial:
+    p.serial = data.serial || p.serial;
+    p.rawContent = data.rawContent;
+
     DB[data.filename] = p; active = data.filename;
     renderTabs(); renderOv(); renderAll();
     document.getElementById('expg').style.display = 'flex';
@@ -1966,6 +1777,10 @@ async function openHistoryPDF(logFileId) {
     DB = {}; active = null; killCharts();
     const p = parseLog(data.rawContent, data.filename);
     if (!p) { toast('Parse hatasi', 'err'); loading(false); return; }
+    // Override outdated serial payload string mapped in raw text with explicit database serial:
+    p.serial = data.serial || p.serial;
+    p.rawContent = data.rawContent;
+    
     DB[data.filename] = p; active = data.filename;
     renderTabs(); renderOv(); renderAll();
     loadNoteFromDB(p.serial);

@@ -19,24 +19,20 @@
   },
   "build": {
     "appId": "com.deniz.loganalyzer",
-    "productName": "Log Analizörü",
-    "win": {
-      "target": "nsis",
-      "icon": "assets/icon.png"
+    "productName": "Log Analizoru",
+    "asar": true,
+    "directories": {
+      "output": "dist_final"
     },
-    "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true,
-      "createDesktopShortcut": true,
-      "createStartMenuShortcut": true
+    "win": {
+      "target": "portable"
     },
     "files": [
       "main.js",
       "preload.js",
       "log_analyzer.html",
-      "src/**",
-      "assets/**",
-      "node_modules/**"
+      "src/**/*",
+      "assets/**/*"
     ]
   }
 }
